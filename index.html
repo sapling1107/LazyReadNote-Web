@@ -32,6 +32,9 @@
       width: 100%;
       box-sizing: border-box;
     }
+    #tokenContainer {
+      margin-top: 1em;
+    }
   </style>
 </head>
 <body>
@@ -41,19 +44,32 @@
   <button onclick="saveNote()">下載為 TXT</button>
   <button onclick="copyNote()">複製全部內容</button>
   <hr>
-  <p>GitHub Token（只需貼一次，會暫存於此裝置）</p>
-  <input type="text" id="tokenInput" placeholder="ghp_XXXXXXXXXXXX" />
-  <button onclick="uploadToGitHub()">上傳到 GitHub</button>
+
+  <div id="tokenContainer">
+    <p>GitHub Token（首次輸入，會自動記住並隱藏）</p>
+    <input type="text" id="tokenInput" placeholder="ghp_XXXXXXXXXXXX" />
+    <button onclick="saveToken()">儲存 Token</button>
+  </div>
+
+  <button onclick="uploadToGitHub()">📤 上傳到 GitHub</button>
 
   <script>
     const textarea = document.getElementById("note");
     const tokenInput = document.getElementById("tokenInput");
+    const tokenContainer = document.getElementById("tokenContainer");
+
+    const filename = `lazy_note_${new Date().toISOString().split("T")[0]}.md`;
+    const api = `https://api.github.com/repos/你的GitHub帳號/EchoGarden/contents/%E5%8C%AF%E5%85%A5%E5%BE%85%E6%95%B4%E7%90%86/${filename}`;
 
     window.onload = () => {
       const saved = localStorage.getItem("lazy_note");
       if (saved) textarea.value = saved;
+
       const savedToken = localStorage.getItem("github_token");
-      if (savedToken) tokenInput.value = savedToken;
+      if (savedToken) {
+        tokenInput.value = savedToken;
+        tokenContainer.style.display = "none"; // 自動隱藏 Token 輸入區塊
+      }
     };
 
     textarea.addEventListener("input", () => {
@@ -64,7 +80,7 @@
       const blob = new Blob([textarea.value], { type: "text/plain;charset=utf-8" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = `lazy_note_${new Date().toISOString().split("T")[0]}.txt`;
+      a.download = filename.replace(".md", ".txt");
       a.click();
     }
 
@@ -74,24 +90,40 @@
       alert("已複製筆記內容");
     }
 
+    function saveToken() {
+      localStorage.setItem("github_token", tokenInput.value.trim());
+      tokenContainer.style.display = "none";
+    }
+
     async function uploadToGitHub() {
-      const token = tokenInput.value.trim();
+      const token = localStorage.getItem("github_token");
       const content = textarea.value;
       if (!token || !content) {
         alert("請輸入 Token 並寫點內容");
         return;
       }
 
-      localStorage.setItem("github_token", token);
+      // 先檢查檔案是否已存在，若有就抓 SHA
+      const getRes = await fetch(api, {
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: "application/vnd.github.v3+json"
+        }
+      });
 
-      const filename = `lazy_note_${new Date().toISOString().split("T")[0]}.md`;
-      const api = `https://api.github.com/repos/sapling1107/EchoGarden/%E5%8C%AF%E5%85%A5%E5%BE%85%E6%95%B4%E7%90%86/${filename}`;
+      let sha = null;
+      if (getRes.ok) {
+        const fileData = await getRes.json();
+        sha = fileData.sha;
+      }
+
       const body = {
         message: `上傳筆記 ${filename}`,
         content: btoa(unescape(encodeURIComponent(content)))
       };
+      if (sha) body.sha = sha;
 
-      const res = await fetch(api, {
+      const putRes = await fetch(api, {
         method: "PUT",
         headers: {
           Authorization: `token ${token}`,
@@ -100,7 +132,7 @@
         body: JSON.stringify(body)
       });
 
-      if (res.ok) {
+      if (putRes.ok) {
         alert("筆記已成功上傳！");
       } else {
         alert("上傳失敗... 請檢查 Token 或網路連線");
