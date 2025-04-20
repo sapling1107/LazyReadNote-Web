@@ -43,6 +43,7 @@
   <br />
   <button onclick="saveNote()">下載為 TXT</button>
   <button onclick="copyNote()">複製全部內容</button>
+  <button onclick="clearNote()">🧹 清空筆記</button>
   <hr>
 
   <div id="tokenContainer">
@@ -59,7 +60,7 @@
     const tokenContainer = document.getElementById("tokenContainer");
 
     const filename = `lazy_note_${new Date().toISOString().split("T")[0]}.md`;
-    const api = `https://api.github.com/repos/sapling1107/EchoGarden/%E5%8C%AF%E5%85%A5%E5%BE%85%E6%95%B4%E7%90%86/${filename}`;
+    const api = `https://api.github.com/repos/你的GitHub帳號/EchoGarden/contents/%E5%8C%AF%E5%85%A5%E5%BE%85%E6%95%B4%E7%90%86/${filename}`;
 
     window.onload = () => {
       const saved = localStorage.getItem("lazy_note");
@@ -90,6 +91,13 @@
       alert("已複製筆記內容");
     }
 
+    function clearNote() {
+      if (confirm("確定要清空筆記？這將無法復原喔！")) {
+        textarea.value = "";
+        localStorage.removeItem("lazy_note");
+      }
+    }
+
     function saveToken() {
       localStorage.setItem("github_token", tokenInput.value.trim());
       tokenContainer.style.display = "none";
@@ -97,13 +105,15 @@
 
     async function uploadToGitHub() {
       const token = localStorage.getItem("github_token");
-      const content = textarea.value;
-      if (!token || !content) {
-        alert("請輸入 Token 並寫點內容");
-        return;
-      }
+      if (!token) return alert("請輸入 Token");
 
-      // 先檢查檔案是否已存在，若有就抓 SHA
+      const contentRaw = textarea.value;
+      if (!contentRaw.trim()) return alert("筆記內容是空的喔～");
+
+      // 自動加 markdown 換行（每行加兩個空格）
+      const content = contentRaw.split('\n').map(line => line.trim() + "  ").join("\n");
+
+      // 先查是否已存在檔案
       const getRes = await fetch(api, {
         headers: {
           Authorization: `token ${token}`,
