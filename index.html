@@ -85,7 +85,7 @@
       localStorage.setItem("github_token", token);
 
       const filename = `lazy_note_${new Date().toISOString().split("T")[0]}.md`;
-      const api = `https://api.github.com/repos/sapling1107/EchoGarden/contents/匯入待整理/${filename}`;
+      const api = `https://api.github.com/repos/sapling1107/EchoGarden/%E5%8C%AF%E5%85%A5%E5%BE%85%E6%95%B4%E7%90%86/${filename}`;
       const body = {
         message: `上傳筆記 ${filename}`,
         content: btoa(unescape(encodeURIComponent(content)))
