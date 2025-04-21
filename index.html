@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LazyReadNote | 夜版懶人筆記</title>
+  <title>LazyReadNote | 夜版懶人筆記 v1.5</title>
   <link rel="manifest" href="manifest.json">
   <style>
     body {
@@ -38,7 +38,10 @@
   </style>
 </head>
 <body>
-  <h1>夜的懶人筆記</h1>
+  <h1>夜的懶人筆記 v1.5</h1>
+  <label for="filenameInput">📂 檔案名稱（可留空使用今天日期）</label>
+  <input type="text" id="filenameInput" placeholder="例如：my-note" />
+  
   <textarea id="note" placeholder="在這裡寫下你的片段、筆記或靈感..."></textarea>
   <br />
   <button onclick="saveNote()">下載為 TXT</button>
@@ -58,9 +61,7 @@
     const textarea = document.getElementById("note");
     const tokenInput = document.getElementById("tokenInput");
     const tokenContainer = document.getElementById("tokenContainer");
-
-    const filename = `lazy_note_${new Date().toISOString().split("T")[0]}.md`;
-    const api = `https://api.github.com/repos/sapling1107/EchoGarden/%E5%8C%AF%E5%85%A5%E5%BE%85%E6%95%B4%E7%90%86/${filename}`;
+    const filenameInput = document.getElementById("filenameInput");
 
     window.onload = () => {
       const saved = localStorage.getItem("lazy_note");
@@ -69,7 +70,7 @@
       const savedToken = localStorage.getItem("github_token");
       if (savedToken) {
         tokenInput.value = savedToken;
-        tokenContainer.style.display = "none"; // 自動隱藏 Token 輸入區塊
+        tokenContainer.style.display = "none";
       }
     };
 
@@ -78,10 +79,11 @@
     });
 
     function saveNote() {
+      const filename = filenameInput.value.trim() || `lazy_note_${new Date().toISOString().split("T")[0]}`;
       const blob = new Blob([textarea.value], { type: "text/plain;charset=utf-8" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = filename.replace(".md", ".txt");
+      a.download = filename + ".txt";
       a.click();
     }
 
@@ -110,10 +112,12 @@
       const contentRaw = textarea.value;
       if (!contentRaw.trim()) return alert("筆記內容是空的喔～");
 
-      // 自動加 markdown 換行（每行加兩個空格）
+      const today = new Date().toISOString().split("T")[0];
+      const filename = filenameInput.value.trim() || `lazy_note_${today}`;
+      const api = `https://api.github.com/repos/你的GitHub帳號/EchoGarden/contents/%E5%8C%AF%E5%85%A5%E5%BE%85%E6%95%B4%E7%90%86/${filename}.md`;
+
       const content = contentRaw.split('\n').map(line => line.trim() + "  ").join("\n");
 
-      // 先查是否已存在檔案
       const getRes = await fetch(api, {
         headers: {
           Authorization: `token ${token}`,
