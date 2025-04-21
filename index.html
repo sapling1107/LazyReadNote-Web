@@ -114,7 +114,7 @@
 
       const today = new Date().toISOString().split("T")[0];
       const filename = filenameInput.value.trim() || `lazy_note_${today}`;
-      const api = `https://api.github.com/repos/你的GitHub帳號/EchoGarden/contents/%E5%8C%AF%E5%85%A5%E5%BE%85%E6%95%B4%E7%90%86/${filename}.md`;
+      const api = `https://api.github.com/repos/sapling1107/EchoGarden/%E5%8C%AF%E5%85%A5%E5%BE%85%E6%95%B4%E7%90%86/${filename}.md`;
 
       const content = contentRaw.split('\n').map(line => line.trim() + "  ").join("\n");
 
